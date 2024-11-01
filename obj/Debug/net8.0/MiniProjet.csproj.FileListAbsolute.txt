@@ -12,17 +12,3 @@ C:\Users\PML\source\repos\exercicesC#\MiniProjet\obj\Debug\net8.0\refint\MiniPro
 C:\Users\PML\source\repos\exercicesC#\MiniProjet\obj\Debug\net8.0\MiniProjet.pdb
 C:\Users\PML\source\repos\exercicesC#\MiniProjet\obj\Debug\net8.0\MiniProjet.genruntimeconfig.cache
 C:\Users\PML\source\repos\exercicesC#\MiniProjet\obj\Debug\net8.0\ref\MiniProjet.dll
-c:\Users\Philippe\OneDrive\Bureau\MiniProjet\bin\Debug\net8.0\MiniProjet.exe
-c:\Users\Philippe\OneDrive\Bureau\MiniProjet\bin\Debug\net8.0\MiniProjet.deps.json
-c:\Users\Philippe\OneDrive\Bureau\MiniProjet\bin\Debug\net8.0\MiniProjet.runtimeconfig.json
-c:\Users\Philippe\OneDrive\Bureau\MiniProjet\bin\Debug\net8.0\MiniProjet.dll
-c:\Users\Philippe\OneDrive\Bureau\MiniProjet\bin\Debug\net8.0\MiniProjet.pdb
-c:\Users\Philippe\OneDrive\Bureau\MiniProjet\obj\Debug\net8.0\MiniProjet.GeneratedMSBuildEditorConfig.editorconfig
-c:\Users\Philippe\OneDrive\Bureau\MiniProjet\obj\Debug\net8.0\MiniProjet.AssemblyInfoInputs.cache
-c:\Users\Philippe\OneDrive\Bureau\MiniProjet\obj\Debug\net8.0\MiniProjet.AssemblyInfo.cs
-c:\Users\Philippe\OneDrive\Bureau\MiniProjet\obj\Debug\net8.0\MiniProjet.csproj.CoreCompileInputs.cache
-c:\Users\Philippe\OneDrive\Bureau\MiniProjet\obj\Debug\net8.0\MiniProjet.dll
-c:\Users\Philippe\OneDrive\Bureau\MiniProjet\obj\Debug\net8.0\refint\MiniProjet.dll
-c:\Users\Philippe\OneDrive\Bureau\MiniProjet\obj\Debug\net8.0\MiniProjet.pdb
-c:\Users\Philippe\OneDrive\Bureau\MiniProjet\obj\Debug\net8.0\MiniProjet.genruntimeconfig.cache
-c:\Users\Philippe\OneDrive\Bureau\MiniProjet\obj\Debug\net8.0\ref\MiniProjet.dll

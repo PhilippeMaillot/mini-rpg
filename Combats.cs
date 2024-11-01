@@ -1,27 +1,22 @@
-﻿using System;
-
-namespace MiniProjet
+﻿namespace MiniProjet
 {
     internal class Combat
     {
-        private static List<(int toursRestants, int degatsParTour)> dotActifs = new();
+        private static readonly List<(int toursRestants, int degatsParTour)> dotActifs = [];
+        private static readonly List<(int toursRestants, int soinsParTour)> healActifs = [];
+        private static bool PassifClasse1EstActive = false;
+        //private static bool PassifClasse2EstActive = false;
 
         public static void LancerCombat(Joueur joueur, Ennemis ennemi)
         {
             Console.Clear();
             AfficherEnteteCombat(joueur.Nom, ennemi.Nom);
-
-            if (joueur.PointsDeVieActuels < joueur.Classe.PointsDeVie)
-            {
-                joueur.PointsDeVieActuels = joueur.Classe.PointsDeVie;
-            }
-
             joueur.AfficherStatistiques();
             ennemi.AfficherStatistiques();
-
             double pointsDeVieMaxJoueur = joueur.Classe.PointsDeVie;
             double pointsDeVieMaxEnnemi = ennemi.PointsDeVie;
             int compteurDeTour = 1;
+            Random random = new();
 
             while (joueur.PointsDeVieActuels > 0 && ennemi.PointsDeVie > 0)
             {
@@ -30,134 +25,64 @@ namespace MiniProjet
                 Console.ForegroundColor = ConsoleColor.Cyan;
                 Console.WriteLine($"\n--- Tour {compteurDeTour} ---");
                 Console.ResetColor();
-
                 joueur.AfficherStatistiques();
                 ennemi.AfficherStatistiques();
-
-                // Appliquer les DoT actifs
-                AppliquerDot(ennemi);
-
+                AppliquerEffets(ennemi, joueur);
+                if (ennemi.PointsDeVie <= 0)
+                {
+                    CasVictoireJoueur(joueur, ennemi);
+                    break;
+                };
                 AfficherEtatVie(joueur.Nom, joueur.PointsDeVieActuels, pointsDeVieMaxJoueur, ennemi.Nom, ennemi.PointsDeVie, pointsDeVieMaxEnnemi);
                 string action = ChoisirAction();
-
                 if (action == "attaquer")
                 {
                     string typeAttaque = ChoisirTypeAttaque(joueur);
 
-                    if (typeAttaque == "physique")
+                    bool joueurAttaqueEnPremier;
+                    if (joueur.CalculerStatistiquesFinales().vitesseFinale > ennemi.Vitesse)
                     {
-                        Console.ForegroundColor = ConsoleColor.DarkYellow;
-                        Console.WriteLine($"\n{joueur.Nom} attaque physiquement {ennemi.Nom} !");
-                        Console.ResetColor();
-                        if (!Esquiver(ennemi.Agilite, new Random()))
-                        {
-                            double degatsJoueur = CalculerDegats(joueur.CalculerStatistiquesFinales().forceFinale, ennemi.Defense);
-                            ennemi.RecevoirDegats(degatsJoueur);
-                            AfficherBarreVie(ennemi.Nom, Math.Max(ennemi.PointsDeVie, 0), pointsDeVieMaxEnnemi);
-
-                            if (ennemi.PointsDeVie <= 0)
-                            {
-                                Console.ForegroundColor = ConsoleColor.Green;
-                                Console.WriteLine($"{ennemi.Nom} a été vaincu !");
-                                Console.ResetColor();
-                                break;
-                            }
-                        }
-                        else
-                        {
-                            Console.ForegroundColor = ConsoleColor.Yellow;
-                            Console.WriteLine($"{ennemi.Nom} a esquivé l'attaque !");
-                            Console.ResetColor();
-                        }
+                        joueurAttaqueEnPremier = true;
                     }
-                    else if (typeAttaque == "magique")
+                    else if (joueur.CalculerStatistiquesFinales().vitesseFinale < ennemi.Vitesse)
                     {
-                        Console.ForegroundColor = ConsoleColor.Blue;
-                        Console.WriteLine($"\n{joueur.Nom} attaque magiquement {ennemi.Nom} !");
-                        Console.ResetColor();
-                        if (!Esquiver(ennemi.Agilite, new Random()))
-                        {
-                            double degatsJoueur = CalculerDegats(joueur.CalculerStatistiquesFinales().intelligenceFinale, ennemi.DefenseMagique);
-                            ennemi.RecevoirDegats(degatsJoueur);
-                            AfficherBarreVie(ennemi.Nom, Math.Max(ennemi.PointsDeVie, 0), pointsDeVieMaxEnnemi);
-
-                            if (ennemi.PointsDeVie <= 0)
-                            {
-                                Console.ForegroundColor = ConsoleColor.Green;
-                                Console.WriteLine($"{ennemi.Nom} a été vaincu !");
-                                Console.ResetColor();
-                                break;
-                            }
-                        }
-                        else
-                        {
-                            Console.ForegroundColor = ConsoleColor.Yellow;
-                            Console.WriteLine($"{ennemi.Nom} a esquivé l'attaque !");
-                            Console.ResetColor();
-                        }
+                        joueurAttaqueEnPremier = false;
                     }
-                    else if (typeAttaque == "spe")
+                    else
                     {
-                        Console.ForegroundColor = ConsoleColor.DarkYellow;
-                        if (joueur.Arme.AttaqueSpe.Utilisation > 0)
-                        {
-                            ActiverEffetAttaqueSpe(joueur, ennemi, compteurDeTour);
-                        }
-                        else
-                        {
-                            Console.WriteLine("Votre attaque spécial n'a plus d'utilisation restante.");
-                        }
+                        joueurAttaqueEnPremier = random.Next(2) == 0;
                     }
-                }
-                else if (action == "objet")
-                {
-                    UtiliserObjet(joueur, ennemi);
-                }
-                else if (action == "quitter")
-                {
-                    Console.WriteLine("Vous quittez le combat.");
-                    Environment.Exit(0);
-                }
 
-                if (ennemi.PointsDeVie > 0)
-                {
-                    Console.ForegroundColor = ConsoleColor.Red;
-                    Console.WriteLine($"\n{ennemi.Nom} attaque {joueur.Nom} !");
-                    Console.ResetColor();
-
-                    if (!Esquiver(joueur.AgiliteActuelle, new Random()))
+                    if (joueurAttaqueEnPremier)
                     {
-                        var (degatsPhysiques, critPhysique) = SimulerDegats(ennemi.Force, joueur.CalculerStatistiquesFinales().defenseFinale, new Random());
-                        var (degatsMagiques, critMagique) = SimulerDegats(ennemi.Intelligence, joueur.CalculerStatistiquesFinales().defenseMagiqueFinale, new Random());
-
-                        double degatsEnnemi = degatsPhysiques > degatsMagiques ? degatsPhysiques : degatsMagiques;
-                        bool isCrit = degatsPhysiques > degatsMagiques ? critPhysique : critMagique;
-
-                        if (isCrit)
+                        if (EffectuerTourJoueur(joueur, ennemi, pointsDeVieMaxEnnemi, typeAttaque)) break;
+                        if (ennemi.PointsDeVie > 0 && !ennemi.EstEncoreStun())
                         {
-                            Console.ForegroundColor = ConsoleColor.Yellow;
-                            Console.WriteLine("Coup critique !");
-                            Console.ResetColor();
-                        }
-
-                        joueur.PointsDeVieActuels -= degatsEnnemi;
-                        Console.WriteLine($"{joueur.Nom} a subi {degatsEnnemi:F1} points de dégâts.");
-                        AfficherBarreVie(joueur.Nom, Math.Max(joueur.PointsDeVieActuels, 0), pointsDeVieMaxJoueur);
-
-                        if (joueur.PointsDeVieActuels <= 0)
-                        {
-                            Console.ForegroundColor = ConsoleColor.Red;
-                            Console.WriteLine($"{joueur.Nom} a été vaincu !");
-                            Console.ResetColor();
-                            break;
+                            if (EffectuerTourEnnemi(joueur, ennemi, pointsDeVieMaxJoueur, pointsDeVieMaxEnnemi)) break;
                         }
                     }
                     else
                     {
-                        Console.ForegroundColor = ConsoleColor.Yellow;
-                        Console.WriteLine($"{joueur.Nom} a esquivé l'attaque !");
-                        Console.ResetColor();
+                        if (ennemi.PointsDeVie > 0 && !ennemi.EstEncoreStun())
+                        {
+                            if (EffectuerTourEnnemi(joueur, ennemi, pointsDeVieMaxJoueur, pointsDeVieMaxEnnemi)) break;
+                        }
+                        if (joueur.PointsDeVieActuels > 0)
+                        {
+                            if (EffectuerTourJoueur(joueur, ennemi, pointsDeVieMaxEnnemi, typeAttaque)) break;
+                        }
                     }
+
+                }
+                else if (action == "objet")
+                {
+                    UtiliserObjet(joueur, ennemi);
+                    EffectuerTourEnnemi(joueur, ennemi, pointsDeVieMaxJoueur, pointsDeVieMaxEnnemi);
+                }
+                else if (action == "quitter")
+                {
+                    Console.WriteLine("Vous avez quitté le combat.");
+                    break;
                 }
 
                 ActiverPassifs(compteurDeTour, ennemi, joueur, pointsDeVieMaxEnnemi);
@@ -168,166 +93,17 @@ namespace MiniProjet
                 compteurDeTour++;
             }
 
-            if (joueur.PointsDeVieActuels > 0)
-            {
-                Console.ForegroundColor = ConsoleColor.Green;
-                Console.WriteLine($"\n{joueur.Nom} a gagné le combat !");
-                joueur.GagnerExperience(ennemi.ExperienceDonne);
-                joueur.GagnerPieceDor(ennemi.PieceDorDonnee);
-            }
-            else
-            {
-                Console.ForegroundColor = ConsoleColor.Red;
-                Console.WriteLine($"\n{ennemi.Nom} a gagné le combat !");
-            }
-
-            TerminerCombat(joueur, ennemi);
+            TerminerCombat(joueur);
             joueur.RestaurerStatistiques();
         }
 
-        private static void AppliquerDot(Ennemis ennemi)
+        private static void AfficherEnteteCombat(string nomJoueur, string nomEnnemi)
         {
-            for (int i = dotActifs.Count - 1; i >= 0; i--) // Parcourir les DoT actifs
-            {
-                var dot = dotActifs[i];
-
-                // Appliquer les dégâts du DoT
-                Console.WriteLine($"Le DoT inflige {dot.degatsParTour} dégâts à {ennemi.Nom}.");
-                ennemi.RecevoirDegats(dot.degatsParTour);
-
-                // Diminuer le nombre de tours restants pour ce DoT
-                dotActifs[i] = (dot.toursRestants - 1, dot.degatsParTour);
-
-                // Si le DoT n'a plus de tours restants, le supprimer
-                if (dotActifs[i].toursRestants <= 0)
-                {
-                    dotActifs.RemoveAt(i);
-                    Console.WriteLine("Un DoT est terminé.");
-                }
-            }
-        }
-
-        private static void ActiverEffetAttaqueSpe(Joueur joueur, Ennemis ennemi, int compteurDeTour)
-        {
-            if (joueur.Arme.AttaqueSpe.Type == "dot")
-            {
-                dotActifs.Add((joueur.Arme.AttaqueSpe.NombreDeTour, joueur.Arme.AttaqueSpe.Effet));
-                joueur.Arme.AttaqueSpe.Utilisation--;
-                Console.WriteLine($"{joueur.Nom} utilise {joueur.Arme.AttaqueSpe.Nom} ! DoT activé pour {joueur.Arme.AttaqueSpe.NombreDeTour} tours.");
-            }
-        }
-
-        private static void TerminerCombat(Joueur joueur, Ennemis ennemi)
-        {
-            dotActifs.Clear();
-            joueur.Arme.AttaqueSpe.Utilisation = joueur.Arme.AttaqueSpe.UtilisationMax;
-        }
-
-
-        private static void UtiliserObjet(Joueur joueur, Ennemis ennemi)
-        {
-            joueur.AfficherInventaire();
-            Console.WriteLine("Choisissez un objet à utiliser ou tapez '0' pour retour :");
-            string choix = Console.ReadLine();
-
-            if (choix == "0")
-            {
-                return;
-            }
-
-            if (int.TryParse(choix, out int index) && index > 0 && index <= joueur.Inventaire.Count)
-            {
-                var objet = new List<Objet>(joueur.Inventaire.Keys)[index - 1];
-                joueur.UtiliserObjet(objet, ennemi);
-                Console.ForegroundColor = ConsoleColor.Green;
-                Console.WriteLine($"{objet.Nom} utilisé !");
-                Console.ResetColor();
-            }
-            else
-            {
-                Console.WriteLine("Choix invalide.");
-            }
-        }
-
-        private static string ChoisirAction()
-        {
-            Console.ForegroundColor = ConsoleColor.White;
-            Console.WriteLine("\nQue voulez-vous faire ?");
-            Console.WriteLine("1 - Attaquer");
-            Console.WriteLine("2 - Utiliser un objet");
-            Console.WriteLine("3 - Quitter");
+            Console.ForegroundColor = ConsoleColor.Cyan;
+            Console.WriteLine("===============================================");
+            Console.WriteLine($" COMBAT: {nomJoueur} VS {nomEnnemi}");
+            Console.WriteLine("===============================================\n");
             Console.ResetColor();
-            string choix = Console.ReadLine();
-
-            return choix switch
-            {
-                "1" => "attaquer",
-                "2" => "objet",
-                "3" => "quitter",
-                _ => ChoisirAction(),
-            };
-        }
-
-        private static string ChoisirTypeAttaque(Joueur joueur)
-        {
-            Console.ForegroundColor = ConsoleColor.White;
-            Console.WriteLine("\nQuel type d'attaque voulez-vous effectuer ?");
-            Console.WriteLine("1 - Attaque physique");
-            Console.WriteLine("2 - Attaque magique");
-            Console.WriteLine($"3 - Attaque spéciale ({joueur.Arme.AttaqueSpe.Nom})");
-            Console.WriteLine("4 - Retour");
-            Console.ResetColor();
-            string choix = Console.ReadLine();
-
-            return choix switch
-            {
-                "1" => "physique",
-                "2" => "magique",
-                "3" => "spe",
-                "4" => "retour",
-                _ => ChoisirTypeAttaque(joueur),
-            };
-        }
-
-        private static bool CalculerCrit(double chanceCritique, Random random)
-        {
-            int chance = random.Next(1, 101);
-            return chance <= chanceCritique;
-        }
-
-        private static double CalculerDegats(double attaque, double defense)
-        {
-            double reduction = 1 - (defense / 100.0);
-            if (CalculerCrit(10, new Random()))
-            {
-                attaque *= 1.5;
-                Console.ForegroundColor = ConsoleColor.Yellow;
-                Console.WriteLine("Coup critique !");
-                Console.ResetColor();
-            }
-            double degats = attaque * reduction;
-            return degats > 0 ? degats : 0;
-        }
-
-        private static (double degats, bool isCrit) SimulerDegats(double attaque, double defense, Random random)
-        {
-            double reduction = 1 - (defense / 100.0);
-            bool isCrit = false;
-
-            if (CalculerCrit(10, random))
-            {
-                attaque *= 1.5;
-                isCrit = true;
-            }
-
-            double degats = attaque * reduction;
-            return (degats > 0 ? degats : 0, isCrit);
-        }
-
-        private static bool Esquiver(double agilite, Random random)
-        {
-            int chanceEsquive = random.Next(1, 101);
-            return chanceEsquive <= agilite;
         }
 
         private static void AfficherBarreVie(string nom, double pointsDeVie, double pointsDeVieMax)
@@ -355,55 +131,339 @@ namespace MiniProjet
             AfficherBarreVie(nomEnnemi, pvEnnemi, pvMaxEnnemi);
         }
 
-        private static void AfficherEnteteCombat(string nomJoueur, string nomEnnemi)
+        private static string ChoisirAction()
         {
-            Console.ForegroundColor = ConsoleColor.Cyan;
-            Console.WriteLine("===============================================");
-            Console.WriteLine($" COMBAT: {nomJoueur} VS {nomEnnemi}");
-            Console.WriteLine("===============================================\n");
+            Console.ForegroundColor = ConsoleColor.White;
+            Console.WriteLine("\nQue voulez-vous faire ?");
+            Console.WriteLine("1 - Attaquer");
+            Console.WriteLine("2 - Utiliser un objet");
+            Console.WriteLine("3 - Quitter");
             Console.ResetColor();
+            string choix = Console.ReadLine();
+
+            return choix switch
+            {
+                "1" => "attaquer",
+                "2" => "objet",
+                "3" => "quitter",
+                _ => ChoisirAction(),
+            };
         }
 
-        private static void ActiverPassifs(int compteurDeTour, Ennemis ennemi, Joueur joueur, double pointsDeVieMaxEnnemi )
+        private static string ChoisirTypeAttaque(Joueur joueur)
         {
-            //Tour 1
+            Console.ForegroundColor = ConsoleColor.White;
+            Console.WriteLine("\nQuel type d'attaque voulez-vous effectuer ?");
+            Console.WriteLine("1 - Attaque physique");
+            Console.WriteLine("2 - Attaque magique");
+            Console.WriteLine($"3 - {joueur.Arme.AttaqueSpe.Nom} (Utilisations restantes : {joueur.Arme.AttaqueSpe.Utilisation} )");
+            Console.WriteLine($"4 - {joueur.Arme.AttaqueSpe2.Nom} (Utilisations restantes : {joueur.Arme.AttaqueSpe2.Utilisation}");
+            Console.WriteLine("5 - Retour");
+            Console.ResetColor();
+            string choix = Console.ReadLine();
 
-            //Tour 2
-            if (compteurDeTour == 2 && joueur.Arme.ClasseDefaut == "Assassin")
+            return choix switch
             {
-                joueur.AgiliteActuelle += 50;
-                Console.ForegroundColor = ConsoleColor.Cyan;
-                Console.WriteLine($"La {joueur.Arme.Nom} de {joueur.Nom} le/la rend plus agile pendant 3 tours !");
+                "1" => "physique",
+                "2" => "magique",
+                "3" => "spe",
+                "4" => "spe2",
+                "5" => "retour",
+                _ => ChoisirTypeAttaque(joueur),
+            };
+        }
+
+        private static void UtiliserObjet(Joueur joueur, Ennemis ennemi)
+        {
+            joueur.AfficherInventaire();
+            Console.WriteLine("Choisissez un objet à utiliser ou tapez '0' pour retour :");
+            string choix = Console.ReadLine();
+
+            if (choix == "0")
+            {
+                return;
+            }
+
+            if (int.TryParse(choix, out int index) && index > 0 && index <= joueur.Inventaire.Count)
+            {
+                var objet = new List<Objets>(joueur.Inventaire.Keys)[index - 1];
+                joueur.UtiliserObjet(objet, ennemi);
+                Console.ForegroundColor = ConsoleColor.Green;
+                Console.WriteLine($"{objet.Nom} utilisé !");
+                Console.ResetColor();
+            }
+            else
+            {
+                Console.WriteLine("Choix invalide.");
+            }
+        }
+
+        private static bool EffectuerTourJoueur(Joueur joueur, Ennemis ennemi, double pointsDeVieMaxEnnemi, string typeAttaque)
+        {
+            if (typeAttaque == "physique")
+            {
+                Console.ForegroundColor = ConsoleColor.Blue;
+                Console.WriteLine($"\n{joueur.Nom} attaque physiquement {ennemi.Nom} !");
+                Console.ResetColor();
+                if (!Calculs.CalculerEsquive(ennemi.Agilite, new Random()))
+                {
+                    double degatsJoueur = Calculs.CalculerDegatsJoueur(joueur, ennemi, joueur.Arme.AttaqueSpe, "physique");
+                    ennemi.RecevoirDegats(degatsJoueur);
+
+                    if (ennemi.PointsDeVie <= 0)
+                    {
+                        CasVictoireJoueur(joueur, ennemi);
+                        return true;
+                    }
+                }
+                else
+                {
+                    Console.ForegroundColor = ConsoleColor.Yellow;
+                    Console.WriteLine($"{ennemi.Nom} a esquivé l'attaque !");
+                    Console.ResetColor();
+                }
+            }
+            else if (typeAttaque == "magique")
+            {
+                Console.ForegroundColor = ConsoleColor.Blue;
+                Console.WriteLine($"\n{joueur.Nom} attaque magiquement {ennemi.Nom} !");
+                Console.ResetColor();
+                if (!Calculs.CalculerEsquive(ennemi.Agilite, new Random()))
+                {
+                    double degatsJoueur = Calculs.CalculerDegatsJoueur(joueur, ennemi, joueur.Arme.AttaqueSpe, "magique");
+                    ennemi.RecevoirDegats(degatsJoueur);
+
+                    if (ennemi.PointsDeVie <= 0)
+                    {
+                        CasVictoireJoueur(joueur, ennemi);
+                        return true;
+                    }
+                }
+                else
+                {
+                    Console.ForegroundColor = ConsoleColor.Yellow;
+                    Console.WriteLine($"{ennemi.Nom} a esquivé l'attaque !");
+                    Console.ResetColor();
+                }
+            }
+            else if (typeAttaque == "spe")
+            {
+                Console.ForegroundColor = ConsoleColor.Blue;
+                if (joueur.Arme.AttaqueSpe.Utilisation > 0)
+                {
+                    Console.WriteLine($"\n{joueur.Nom} utilise {joueur.Arme.AttaqueSpe.Nom} !");
+                    ActiverEffetAttaqueSpe(joueur, ennemi, joueur.Arme.AttaqueSpe);
+                    if (ennemi.PointsDeVie <= 0)
+                    {
+                        CasVictoireJoueur(joueur, ennemi);
+                        return true;
+                    }
+                }
+                else
+                {
+                    Console.WriteLine("Votre attaque spécial n'a plus d'utilisation restante.");
+                }
+                Console.ResetColor();
+            } else if (typeAttaque == "spe2")
+            {
+                Console.ForegroundColor = ConsoleColor.Blue;
+                if (joueur.Arme.AttaqueSpe.Utilisation > 0)
+                {
+                    Console.WriteLine($"\n{joueur.Nom} utilise {joueur.Arme.AttaqueSpe.Nom} !");
+                    ActiverEffetAttaqueSpe(joueur, ennemi, joueur.Arme.AttaqueSpe2);
+                    if (ennemi.PointsDeVie <= 0)
+                    {
+                        CasVictoireJoueur(joueur, ennemi);
+                        return true;
+                    }
+                }
+                else
+                {
+                    Console.WriteLine("Votre attaque spécial n'a plus d'utilisation restante.");
+                }
                 Console.ResetColor();
             }
 
-            //Tour 3
-            if (compteurDeTour >= 3 && (ennemi.TypeEnnemi == "defensifPhysique" || ennemi.TypeEnnemi == "defensifMagique"))
+            AfficherEtatVie(joueur.Nom, joueur.PointsDeVieActuels, joueur.Classe.PointsDeVie, ennemi.Nom, ennemi.PointsDeVie, pointsDeVieMaxEnnemi);
+            return false;
+        }
+
+        private static bool EffectuerTourEnnemi(Joueur joueur, Ennemis ennemi, double pointsDeVieMaxJoueur, double pointsDeVieMaxEnnemi)
+        {
+            Console.ForegroundColor = ConsoleColor.Red;
+            Console.WriteLine($"\n{ennemi.Nom} attaque {joueur.Nom} !");
+            Console.ResetColor();
+
+            if (!Calculs.CalculerEsquive(joueur.CalculerStatistiquesFinales().agiliteFinale, new Random()))
             {
-                ennemi.RecevoirSoins(0.07 * pointsDeVieMaxEnnemi, pointsDeVieMaxEnnemi);
+                double degatsEnnemi = Calculs.CalculerDegatsEnnemi(joueur, ennemi);
+                joueur.PointsDeVieActuels -= degatsEnnemi;
+                Console.ForegroundColor = ConsoleColor.Blue;
+                Console.WriteLine($"{joueur.Nom} a subi {degatsEnnemi:F1} points de dégâts.");
+                Console.ResetColor();
+
+                if (joueur.PointsDeVieActuels <= 0)
+                {
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine($"{joueur.Nom} a été vaincu !");
+                    Console.ResetColor();
+                    return true;
+                }
             }
+            else
+            {
+                Console.ForegroundColor = ConsoleColor.Yellow;
+                Console.WriteLine($"{joueur.Nom} a esquivé l'attaque !");
+                Console.ResetColor();
+            }
+
+            AfficherEtatVie(joueur.Nom, joueur.PointsDeVieActuels, pointsDeVieMaxJoueur, ennemi.Nom, ennemi.PointsDeVie, pointsDeVieMaxEnnemi);
+            return false;
+        }
+
+        private static void TerminerCombat(Joueur joueur)
+        {
+            dotActifs.Clear();
+            PassifClasse1EstActive = false;
+            joueur.Arme.AttaqueSpe.Utilisation = joueur.Arme.AttaqueSpe.UtilisationMax;
+            joueur.Arme.AttaqueSpe2.Utilisation = joueur.Arme.AttaqueSpe2.UtilisationMax;
+        }
+
+        private static void CasVictoireJoueur(Joueur joueur, Ennemis ennemi)
+        {
+            joueur.GagnerExperience(ennemi.ExperienceDonne);
+            joueur.GagnerPieceDor(ennemi.PieceDorDonnee);
+        }
+
+        private static void ActiverPassifs(int compteurDeTour, Ennemis ennemi, Joueur joueur, double pointsDeVieMaxEnnemi)
+        {
+            //Passifs liées à l'état//
+            if (joueur.PointsDeVieActuels <= (0.40 * joueur.Classe.PointsDeVie) && joueur.Classe.Nom == "Revenant" && PassifClasse1EstActive == false)
+            {
+                joueur.ForceActuelle += joueur.ForceActuelle + 30;
+                joueur.VitesseActuelle += joueur.VitesseActuelle + 20;
+                PassifClasse1EstActive = true;
+                Console.ForegroundColor = ConsoleColor.Cyan;
+                Console.WriteLine($"{joueur.Nom} se renforce !");
+                Console.ResetColor();
+            }
+
+            //Passifs liés au tours//
+
+            //Tour 1
+
+            //Tour 2
+
+            //Tour 3
 
             //Tour 4
 
-
             //Tour 5
-            if (compteurDeTour == 5 && joueur.Arme.ClasseDefaut == "Assassin")
-            {
-                joueur.AgiliteActuelle = joueur.Classe.Agilite;
-                Console.ForegroundColor = ConsoleColor.Cyan;
-                Console.WriteLine($"{joueur.Nom} redevient normal !");
-            }
 
             //Tour 6
-            if (compteurDeTour >= 6 && joueur.Classe.Nom == "Défenseur")
+
+            //Tour 7
+            if (compteurDeTour >= 7 && (ennemi.TypeEnnemi == "defensifPhysique" || ennemi.TypeEnnemi == "defensifMagique"))
             {
-                joueur.ForceActuelle += joueur.Classe.Force * 0.10;
+                ennemi.RecevoirSoins(0.025 * pointsDeVieMaxEnnemi, pointsDeVieMaxEnnemi);
+            }
+
+            if (compteurDeTour >= 7 && joueur.Classe.Nom == "Défenseur")
+            {
+                joueur.ForceActuelle += joueur.Classe.Force * 0.30;
                 Console.ForegroundColor = ConsoleColor.Cyan;
                 Console.WriteLine($"{joueur.Nom} s'enrage !");
                 Console.ResetColor();
             }
+        }
 
-            //Tour 7
+        private static void ActiverEffetAttaqueSpe(Joueur joueur, Ennemis ennemi, AttaqueSpe attaqueSpe)
+        {
+            if (attaqueSpe.Type.Contains("physique"))
+                ennemi.RecevoirDegats(Calculs.CalculerDegatsJoueur(joueur, ennemi, attaqueSpe, "spePhys"));
+
+            if (attaqueSpe.Type.Contains("magique"))
+                ennemi.RecevoirDegats(Calculs.CalculerDegatsJoueur(joueur, ennemi, attaqueSpe, "speMag"));
+
+            if (attaqueSpe.Type.Contains("heal"))
+                AppliquerSoins(joueur, attaqueSpe);
+
+            if (attaqueSpe.Type.Contains("dot"))
+                AppliquerDoT(joueur, attaqueSpe);
+
+            if (attaqueSpe.Type.Contains("buff"))
+                AppliquerBuff(joueur, attaqueSpe);
+
+            if (attaqueSpe.Type.Contains("nerf"))
+                AppliquerNerf(ennemi, attaqueSpe);
+
+            if (attaqueSpe.Type.Contains("stun"))
+                ennemi.AppliquerStun(attaqueSpe.NombreDeTour);
+
+            if (attaqueSpe.Type.Contains("multiplierVie"))
+                AppliquerMultiplierVie(joueur, attaqueSpe);
+
+            attaqueSpe.Utilisation--;
+        }
+
+        private static void AppliquerEffets(Ennemis ennemi, Joueur joueur)
+        {
+            // Appliquer les DoT
+            for (int i = dotActifs.Count - 1; i >= 0; i--)
+            {
+                var (toursRestants, degatsParTour) = dotActifs[i];
+                ennemi.RecevoirDegats(degatsParTour);
+                dotActifs[i] = (toursRestants - 1, degatsParTour);
+                if (dotActifs[i].toursRestants <= 0)
+                {
+                    dotActifs.RemoveAt(i);
+                    Console.WriteLine("Un DoT est terminé.");
+                }
+            }
+
+            for (int i = healActifs.Count - 1; i >= 0; i--)
+            {
+                var (toursRestants, soinsParTour) = healActifs[i];
+                Console.WriteLine($"{joueur.Nom} reçoit {soinsParTour} points de vie.");
+                joueur.PointsDeVieActuels = Math.Min(joueur.PointsDeVieActuels + soinsParTour, joueur.Classe.PointsDeVie);
+                healActifs[i] = (toursRestants - 1, soinsParTour);
+                if (healActifs[i].toursRestants <= 0)
+                {
+                    healActifs.RemoveAt(i);
+                    Console.WriteLine("Le soin récurrent est terminé.");
+                }
+            }
+        }
+
+        private static void AppliquerDoT(Joueur joueur, AttaqueSpe attaqueSpe)
+        {
+            dotActifs.Add((attaqueSpe.NombreDeTour, attaqueSpe.DotDegatsParTour));
+            Console.ForegroundColor = ConsoleColor.Blue;
+            Console.WriteLine($"{joueur.Nom} utilise {attaqueSpe.Nom} ! DoT activé pour {attaqueSpe.NombreDeTour} tours.");
+            Console.ResetColor();
+        }
+
+        private static void AppliquerBuff(Joueur joueur, AttaqueSpe attaqueSpe)
+        {
+            joueur.AppliquerBuff(attaqueSpe.BuffStatistiques, attaqueSpe.MontantBuff);
+            Console.WriteLine($"{joueur.Nom} utilise {attaqueSpe.Nom} et reçoit un buff !");
+        }
+
+        private static void AppliquerNerf(Ennemis ennemi, AttaqueSpe attaqueSpe)
+        {
+            ennemi.AppliquerNerf(attaqueSpe.NerfStatistiques, attaqueSpe.MontantNerf);
+            Console.WriteLine($"{attaqueSpe.Nom} affaiblit {ennemi.Nom} !");
+        }
+
+        private static void AppliquerMultiplierVie(Joueur joueur, AttaqueSpe attaqueSpe)
+        {
+            joueur.PointsDeVieActuels = Math.Min(joueur.PointsDeVieActuels, joueur.Classe.PointsDeVie * attaqueSpe.Multiplier);
+        }
+
+        private static void AppliquerSoins(Joueur joueur, AttaqueSpe attaqueSpe)
+        {
+            joueur.PointsDeVieActuels = Math.Min(joueur.PointsDeVieActuels + attaqueSpe.Soins, joueur.Classe.PointsDeVie);
+            Console.WriteLine($"{joueur.Nom} se soigne de {attaqueSpe.Soins} points de vie.");
         }
     }
 }

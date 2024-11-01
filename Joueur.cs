@@ -1,4 +1,6 @@
-﻿namespace MiniProjet
+﻿using System.Text.Json.Serialization;
+
+namespace MiniProjet
 {
     public class Joueur
     {
@@ -7,19 +9,23 @@
         public int Niveau { get; set; }
         public Classes Classe { get; set; }
         public Armes Arme { get; set; }
-        public Dictionary<Objet, int> Inventaire { get; set; }
+
+        [JsonIgnore]
+        public Dictionary<Objets, int> Inventaire { get; set; }
         public Dictionary<int, Armes> Armurerie { get; set; }
+        public Dictionary<int, Classes> ClassesDebloquee { get; set; }
         public double PointsDeVieActuels { get; set; }
         public double ForceActuelle { get; set; }
         public double AgiliteActuelle { get; set; }
         public double IntelligenceActuelle { get; set; }
         public double DefenseActuelle { get; set; }
         public double DefenseMagiqueActuelle { get; set; }
+        public double VitesseActuelle { get; set; }
         public int PieceDor { get; set; }
+        public int prochainIdArme;
+        public int prochainIdClasse;
 
-        private int prochainIdArme;
-
-        public Joueur(string nom, int experience, int niveau, Classes classe, Armes arme, double pointsDeVieActuels, double forceActuelle, double agiliteActuelle, double intelligenceActuelle, double defenseActuelle, double defenseMagiqueActuelle, int pieceDor)
+        public Joueur(string nom, int experience, int niveau, Classes classe, Armes arme, double pointsDeVieActuels, double forceActuelle, double agiliteActuelle, double intelligenceActuelle, double defenseActuelle, double defenseMagiqueActuelle, double vitesseActuelle, int pieceDor)
         {
             Nom = nom;
             Experience = experience;
@@ -28,26 +34,114 @@
             Arme = arme;
             Inventaire = [];
             Armurerie = [];
+            ClassesDebloquee = [];
             PointsDeVieActuels = pointsDeVieActuels;
             ForceActuelle = forceActuelle;
             AgiliteActuelle = agiliteActuelle;
             IntelligenceActuelle = intelligenceActuelle;
             DefenseActuelle = defenseActuelle;
             DefenseMagiqueActuelle = defenseMagiqueActuelle;
+            VitesseActuelle = vitesseActuelle;
             PieceDor = pieceDor;
             prochainIdArme = 1;
+            prochainIdClasse = 1;
             AjouterObjetsDeBase();
+        }
+
+        public Dictionary<string, int> InventaireSerializable
+        {
+            get => Inventaire.ToDictionary(entry => entry.Key.Nom, entry => entry.Value);
+            set
+            {
+                var inventaireTemporaire = new Dictionary<Objets, int>();
+
+                foreach (var entry in value)
+                {
+                    Objets objet = ConvertirEnObjet(entry.Key);
+
+                    if (objet != null)
+                    {
+                        if (!inventaireTemporaire.ContainsKey(objet))
+                        {
+                            inventaireTemporaire[objet] = entry.Value;
+                        }
+                        else
+                        {
+                            Console.WriteLine($"Doublon détecté pour l'objet : {entry.Key}, ignoré lors de la reconstruction.");
+                        }
+                    }
+                    else
+                    {
+                        Console.WriteLine($"Objet introuvable : {entry.Key}, ignoré lors de la reconstruction.");
+                    }
+                }
+
+                Inventaire = inventaireTemporaire;
+            }
+        }
+
+        private static Objets ConvertirEnObjet(string nomObjet)
+        {
+            return Objets.ListeObjets.FirstOrDefault(objet => objet.Nom == nomObjet);
         }
 
         private void AjouterObjetsDeBase()
         {
-            Objet potionSoin = new("Potion de Soin (50pv)", "soin", 50);
-            Inventaire[potionSoin] = 5;
-            Objet potionDegats = new("Potion de Dégâts", "force", 20);
-            Inventaire[potionDegats] = 3;
+            Inventaire[Objets.potionSoin] = 5;
+            Inventaire[Objets.potionDegats] = 3;
         }
 
-        public void UtiliserObjet(Objet objet, Ennemis ennemi)
+        public void AjouterObjet(Objets objet)
+        {
+            if (Inventaire.TryGetValue(objet, out int value))
+            {
+                Inventaire[objet] = ++value;
+            }
+            else
+            {
+                Inventaire[objet] = 1;
+            }
+        }
+
+        public void AjouterArme(Armes arme)
+        {
+            if (Armurerie.Count > 0)
+            {
+                prochainIdArme = Armurerie.Keys.Max() + 1;
+            }
+            else
+            {
+                prochainIdArme = 1;
+            }
+            Armurerie[prochainIdArme] = arme;
+            prochainIdArme++;
+        }
+
+        public void AjouterClasse(Classes classe)
+        {
+            if (ClassesDebloquee.Count > 0)
+            {
+                prochainIdClasse = ClassesDebloquee.Keys.Max() + 1;
+            }
+            else
+            {
+                prochainIdClasse = 1;
+            }
+            ClassesDebloquee[prochainIdClasse] = classe;
+            prochainIdClasse++;
+        }
+
+        public void MettreAJourClassesDebloquees(Classes classe)
+        {
+            var classeExistante = ClassesDebloquee.FirstOrDefault(c => c.Value.Nom == classe.Nom);
+
+            if (classeExistante.Value != null)
+            {
+                ClassesDebloquee[classeExistante.Key] = classe;
+            }
+        }
+
+        public void UtiliserObjet(Objets objet, Ennemis ennemi)
         {
             if (Inventaire.TryGetValue(objet, out int value) && value > 0)
             {
@@ -62,12 +156,6 @@
             {
                 Console.WriteLine("Objet non disponible ou quantité insuffisante.");
             }
-        }
-
-        private void AjouterArme(Armes arme)
-        {
-            Armurerie[prochainIdArme] = arme;
-            prochainIdArme++;
         }
 
         public void AfficherInventaire()
@@ -101,11 +189,42 @@
             }
         }
 
+        public void AfficherClassesDebloquee()
+        {
+            Console.WriteLine("\n=== Classes débloquées ===");
+            foreach (var item in ClassesDebloquee)
+            {
+                Console.WriteLine($"{item.Key} - {item.Value.Nom}");
+            }
+
+            Console.WriteLine("Veuillez choisir une classe parmi les propositions ci-dessus ou appuyer sur Entrée pour revenir au menu.");
+            string choix = Console.ReadLine();
+
+            if (int.TryParse(choix, out int idClasse) && ClassesDebloquee.TryGetValue(idClasse, out Classes? value))
+            {
+                Joueur.ChangerClasse(this, value);
+                Console.WriteLine($"Vous avez choisi la classe {Classe.Nom} !");
+            }
+            else if (!string.IsNullOrEmpty(choix))
+            {
+                Console.WriteLine("Classe non trouvée.");
+            }
+        }
+
+        public static void ChangerClasse(Joueur joueur, Classes classe)
+        {
+            joueur.Classe = classe;
+            joueur.PointsDeVieActuels = classe.PointsDeVie;
+            joueur.ForceActuelle = classe.Force;
+            joueur.AgiliteActuelle = classe.Agilite;
+            joueur.IntelligenceActuelle = classe.Intelligence;
+            joueur.DefenseActuelle = classe.Defense;
+            joueur.DefenseMagiqueActuelle = classe.DefenseMagique;
+        }
+
         public static Joueur CreerJoueur()
         {
-            AttaqueSpe BaseAttaqueSpe = new("Echarde", "dot", 5, 5, 1, "Ouille une echarde ! (l'ennemi est blessé pendant les 5 prochains tours");
-            Armes baseArme = new("Epée en bois", 7, 0, "Guerrier", 1.2, 3, 0, 0, BaseAttaqueSpe);
-
+            Armes baseArme = Armes.epeeEnBois;
             Console.Write("Entrez le nom de votre personnage : ");
             string nom = Console.ReadLine();
 
@@ -114,7 +233,7 @@
             if (classe == null)
             {
                 Console.WriteLine("Choix invalide. Un guerrier par défaut sera choisi.");
-                classe = new Classes("Guerrier", 120, 8, 5, 3, 10, 4);
+                classe = Classes.guerrier;
             }
 
             Armes arme = AfficherArmesDeBase();
@@ -123,8 +242,9 @@
                 Console.WriteLine("Choix invalide. Une épée en bois par défaut sera choisie.");
                 arme = baseArme;
             }
-            Joueur joueur = new(nom, 0, 0, classe, arme, classe.PointsDeVie, classe.Force, classe.Agilite, classe.Intelligence, classe.Defense, classe.DefenseMagique, 50);
+            Joueur joueur = new(nom, 0, 0, classe, arme, classe.PointsDeVie, classe.Force, classe.Agilite, classe.Intelligence, classe.Defense, classe.DefenseMagique, classe.Vitesse, 50);
             joueur.AjouterArme(arme);
+            joueur.AjouterClasse(classe);
 
             return joueur;
         }
@@ -132,7 +252,9 @@
         public void GagnerExperience(int points)
         {
             Experience += points;
+            Console.ForegroundColor = ConsoleColor.Magenta;
             Console.WriteLine($"{Nom} a gagné {points} points d'expérience !");
+            Console.ResetColor();
 
             while (Experience >= 100)
             {
@@ -143,23 +265,25 @@
         private void MonteDeNiveau()
         {
             Niveau += 1;
+            Classe.Niveau += 1;
+            Classe.Niveau = Math.Min(Classe.Niveau, 100);
             Experience -= 100;
+            Boutique.VerificationNouveauxItems(Niveau);
 
-            Classe.PointsDeVie = Math.Round(Classe.PointsDeVie * 1.015, 2);
-            Classe.Force = Math.Round(Classe.Force * 1.025, 2);
-            Classe.Intelligence = Math.Round(Classe.Intelligence * 1.025, 2);
-            Classe.Agilite = Math.Round(Classe.Agilite * 1.025, 2);
-            Classe.Defense = Math.Round(Classe.Defense * 1.025, 2);
-            Classe.DefenseMagique = Math.Round(Classe.DefenseMagique * 1.025, 2);
+            if (Classe.Niveau < 100)
+            {
+                Classes.CalculerMonteeDeNiveau(this);
+            }
 
             PointsDeVieActuels = Classe.PointsDeVie;
-
-            Console.ForegroundColor = ConsoleColor.Green;
+            MettreAJourClassesDebloquees(Classe);
+            Console.ForegroundColor = ConsoleColor.Magenta;
             Console.WriteLine($"{Nom} est monté au niveau {Niveau} !");
-            Console.WriteLine("Toutes vos statistiques de base ont augmenté !");
-            VerifierBonusNiveau();
+            Console.WriteLine($"La classe {Classe.Nom} est montée au niveau {Classe.Niveau} !");
+            Console.WriteLine($"Les statistques de la classe {Classe.Nom} ont augmenté !");
             Console.ResetColor();
         }
+
         public void GagnerPieceDor(int pieceDor)
         {
             PieceDor += pieceDor;
@@ -170,12 +294,6 @@
 
         public static Classes AfficherClasses()
         {
-            Classes guerrier = new("Guerrier", 120, 8, 5, 3, 10, 4);
-            Classes mage = new("Mage", 100, 2, 5, 15, 3, 5);
-            Classes archer = new("Archer", 90, 14, 10, 0, 3, 3);
-            Classes assassin = new("Assassin", 85, 7, 15, 2, 2, 4);
-            Classes defenseur = new("Défenseur", 140, 5, 7, 3, 10, 5);
-
             Console.WriteLine("1 - Guerrier");
             Console.WriteLine("2 - Archer");
             Console.WriteLine("3 - Mage");
@@ -186,11 +304,11 @@
 
             return choix switch
             {
-                "1" => guerrier,
-                "2" => archer,
-                "3" => mage,
-                "4" => defenseur,
-                "5" => assassin,
+                "1" => Classes.guerrier,
+                "2" => Classes.archer,
+                "3" => Classes.mage,
+                "4" => Classes.defenseur,
+                "5" => Classes.assassin,
                 _ => null,
             };
         }
@@ -222,14 +340,14 @@
             };
         }
 
-        public (double forceFinale, double agiliteFinale, double intelligenceFinale, double defenseFinale, double defenseMagiqueFinale) CalculerStatistiquesFinales()
+        public (double forceFinale, double agiliteFinale, double intelligenceFinale, double defenseFinale, double defenseMagiqueFinale, double vitesseFinale) CalculerStatistiquesFinales()
         {
             double forceFinale = ForceActuelle;
             double agiliteFinale = AgiliteActuelle;
             double intelligenceFinale = IntelligenceActuelle;
             double defenseFinale = DefenseActuelle;
             double defenseMagiqueFinale = DefenseMagiqueActuelle;
-
+            double vitesseFinale = VitesseActuelle;
             double multiplicateur = Arme.ClasseDefaut == Classe.Nom ? Arme.Multiplicateur : 1.0;
 
             double degatsPhysiquesArme = Arme.DegatsPhysiques * multiplicateur;
@@ -237,75 +355,33 @@
             double defenseArme = Arme.Defense * multiplicateur;
             double defenseMagiqueArme = Arme.DefenseMagique * multiplicateur;
             double agiliteArme = Arme.Agilite * multiplicateur;
+            double vitesseArme = Arme.Vitesse * multiplicateur;
 
             forceFinale += degatsPhysiquesArme;
             intelligenceFinale += degatsMagiquesArme;
             defenseFinale += defenseArme;
             defenseMagiqueFinale += defenseMagiqueArme;
             agiliteFinale += agiliteArme;
+            vitesseFinale += vitesseArme;
 
-            return (forceFinale, agiliteFinale, intelligenceFinale, defenseFinale, defenseMagiqueFinale);
+            return (forceFinale, agiliteFinale, intelligenceFinale, defenseFinale, defenseMagiqueFinale, vitesseFinale);
         }
 
         public void AfficherStatistiques()
         {
-            var (forceFinale, agiliteFinale, intelligenceFinale, defenseFinale, defenseMagiqueFinale) = CalculerStatistiquesFinales();
+            var (forceFinale, agiliteFinale, intelligenceFinale, defenseFinale, defenseMagiqueFinale, vitesseFinale) = CalculerStatistiquesFinales();
 
             Console.WriteLine("/***********/ Statistiques du joueur /***********/");
-            Console.WriteLine($"Nom : {Nom}");
+            Console.WriteLine($"Nom : {Nom} | Pièces d'or : {PieceDor}");
             Console.WriteLine($"Classe : {Classe.Nom}");
-            Console.WriteLine($"Niveau : {Niveau}");
+            Console.WriteLine($"Niveau : {Niveau}  |  Niveau de la classe : {Classe.Niveau}");
             Console.WriteLine($"Expérience : {Experience}");
-            Console.WriteLine($"Pièces d'or : {PieceDor}");
             Console.WriteLine($"Points de vie : {Classe.PointsDeVie:F2}");
-            Console.WriteLine($"Agilité : {agiliteFinale:F2}");
-            Console.WriteLine($"Force (dégâts physiques) : {forceFinale:F2}");
-            Console.WriteLine($"Intelligence (dégâts magiques) : {intelligenceFinale:F2}");
-            Console.WriteLine($"Défense physique : {defenseFinale:F2}");
-            Console.WriteLine($"Défense magique : {defenseMagiqueFinale:F2}");
-            Console.WriteLine($"Attaque spéciale : {Arme.AttaqueSpe.Nom}; Effet : {Arme.AttaqueSpe.Description}");
-            Console.WriteLine($"Arme : {Arme.Nom} (Dégâts Physiques : {Arme.DegatsPhysiques}, Dégâts Magiques : {Arme.DegatsMagiques}, Défense Physique : {Arme.Defense}, Défense Magique : {Arme.DefenseMagique}, Multiplicateur : {Arme.Multiplicateur})");
+            Console.WriteLine($"Agilité : {agiliteFinale:F2} | Vitesse : {vitesseFinale:F2}");
+            Console.WriteLine($"Force (dégâts physiques) : {forceFinale:F2} | Intelligence (dégâts magiques) : {intelligenceFinale:F2}");
+            Console.WriteLine($"Défense physique : {defenseFinale:F2} | Défense magique : {defenseMagiqueFinale:F2}");
+            Console.WriteLine($"Arme : {Arme.Nom} | Attaque spéciale : {Arme.AttaqueSpe.Nom} | Effet : {Arme.AttaqueSpe.Description}");
             Console.WriteLine("/*************************************************/");
-        }
-
-        public static void BuffEnCombat(Joueur joueur, string attributABuff, double multiplieur)
-        {
-            switch (attributABuff)
-            {
-                case "force":
-                    joueur.ForceActuelle *= multiplieur;
-                    Console.WriteLine($"La force de {joueur.Nom} a augmenté de {multiplieur} !");
-                    Console.ResetColor();
-                    break;
-                case "agilite":
-                    joueur.AgiliteActuelle *= multiplieur;
-                    Console.ForegroundColor = ConsoleColor.Blue;
-                    Console.WriteLine($"L'agilité de {joueur.Nom} a augmenté de {multiplieur} !");
-                    Console.ResetColor();
-                    break;
-                case "intelligence":
-                    joueur.IntelligenceActuelle *= multiplieur;
-                    Console.ForegroundColor = ConsoleColor.Blue;
-                    Console.WriteLine($"L'intelligence de {joueur.Nom} a augmenté de {multiplieur} !");
-                    Console.ResetColor();
-                    break;
-                case "defense":
-                    joueur.DefenseActuelle *= multiplieur;
-                    Console.ForegroundColor = ConsoleColor.Blue;
-                    Console.WriteLine($"La défense de {joueur.Nom} a augmenté de {multiplieur} !");
-                    Console.ResetColor();
-                    break;
-                case "defenseMagique":
-                    joueur.DefenseMagiqueActuelle *= multiplieur;
-                    Console.ForegroundColor = ConsoleColor.Blue;
-                    Console.WriteLine($"La défense magique de {joueur.Nom} a augmenté de {multiplieur} !");
-                    Console.ResetColor();
-                    break;
-                default:
-                    Console.WriteLine("Attribut invalide.");
-                    break;
-            }
-
         }
 
         public void RestaurerStatistiques()
@@ -318,36 +394,28 @@
             DefenseMagiqueActuelle = Classe.DefenseMagique;
         }
 
-        public void VerifierBonusNiveau()
+        public void AppliquerBuff(string stat, int montant)
         {
-            //if (Niveau == 5)
-            //{
-            //    switch (Classe.Nom)
-            //    {
-            //        case "Guerrier":
-            //            AjouterArme(new Armes("Epée en fer", 10, 0, "Guerrier", 1.3, 5, 0, 0));
-            //            Console.WriteLine("Vous avez débloqué une nouvelle arme : Epée en fer !");
-            //            break;
-            //        case "Mage":
-            //            AjouterArme(new Armes("Bâton en fer", 0, 10, "Mage", 1.5, 0, 5, 0));
-            //            Console.WriteLine("Vous avez débloqué une nouvelle arme : Bâton en fer !");
-            //            break;
-            //        case "Archer":
-            //            AjouterArme(new Armes("Arc en fer", 12, 0, "Archer", 1.3, 0, 0, 3));
-            //            Console.WriteLine("Vous avez débloqué une nouvelle arme : Arc en fer !");
-            //            break;
-            //        case "Assassin":
-            //            AjouterArme(new Armes("Dague en fer", 8, 0, "Assassin", 1.8, 0, 0, 7));
-            //            Console.WriteLine("Vous avez débloqué une nouvelle arme : Dague en fer !");
-            //            break;
-            //        case "Défenseur":
-            //            AjouterArme(new Armes("Bouclier en fer", 5, 0, "Défenseur", 1.6, 10, 0, 0));
-            //            Console.WriteLine("Vous avez débloqué une nouvelle arme : Bouclier en fer !");
-            //            break;
-            //        default:
-            //            break;
-            //    }
-            //}
+            switch (stat)
+            {
+                case "force":
+                    ForceActuelle += montant;
+                    break;
+                case "agilite":
+                    AgiliteActuelle += montant;
+                    break;
+                case "intelligence":
+                    IntelligenceActuelle += montant;
+                    break;
+                case "defense":
+                    DefenseActuelle += montant;
+                    break;
+                case "defenseMagique":
+                    DefenseMagiqueActuelle += montant;
+                    break;
+                default:
+                    break;
+            }
         }
     }
 }

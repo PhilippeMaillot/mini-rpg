@@ -1,17 +1,19 @@
 ﻿namespace MiniProjet
 {
-    public class Objet(string nom, string type, int effet)
+    public class Objets(string nom, string type, int effet)
     {
         public string Nom { get; set; } = nom;
         public string Type { get; set; } = type;
         public int Effet { get; set; } = effet;
 
-        //Types:
-        //Soin (soigne le joueur)
-        //Force (Fait des dégats à l'ennemi)
-        //Agilite (Augmente l'esquive pendant le combat)
-        //Defense (Augmente la defense du joueur pendant le combat)
-        //DefenseMagique (Augmente la defense magique du joueur pendant le combat)
+        public static readonly Objets potionSoin = new("Potion de Soin", "soin", 20);
+        public static readonly Objets potionDegats = new("Potion de Dégâts", "force", 20);
+        public static readonly Objets potionAgilite = new("Potion d'Agilité", "agilite", 20);
+        public static readonly Objets potionDefense = new("Potion de Défense", "defense", 20);
+        public static readonly Objets potionDefenseMagique = new("Potion de Défense Magique", "defenseMagique", 20);
+        private static readonly List<Objets> objetsDisponibles = [potionSoin, potionDegats, potionAgilite, potionDefense, potionDefenseMagique];
+
+        public readonly static List<Objets> ListeObjets = objetsDisponibles;
         public void Utiliser(Joueur joueur, Ennemis ennemi, int Effet)
         {
             if (Type == "soin")

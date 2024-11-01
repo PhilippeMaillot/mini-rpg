@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "c:\\Users\\Philippe\\OneDrive\\Bureau\\MiniProjet\\MiniProjet.csproj": {}
+    "C:\\Users\\Philippe\\Documents\\PP\\MiniProjet\\MiniProjet.csproj": {}
   },
   "projects": {
-    "c:\\Users\\Philippe\\OneDrive\\Bureau\\MiniProjet\\MiniProjet.csproj": {
+    "C:\\Users\\Philippe\\Documents\\PP\\MiniProjet\\MiniProjet.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "c:\\Users\\Philippe\\OneDrive\\Bureau\\MiniProjet\\MiniProjet.csproj",
+        "projectUniqueName": "C:\\Users\\Philippe\\Documents\\PP\\MiniProjet\\MiniProjet.csproj",
         "projectName": "MiniProjet",
-        "projectPath": "c:\\Users\\Philippe\\OneDrive\\Bureau\\MiniProjet\\MiniProjet.csproj",
+        "projectPath": "C:\\Users\\Philippe\\Documents\\PP\\MiniProjet\\MiniProjet.csproj",
         "packagesPath": "C:\\Users\\Philippe\\.nuget\\packages\\",
-        "outputPath": "c:\\Users\\Philippe\\OneDrive\\Bureau\\MiniProjet\\obj\\",
+        "outputPath": "C:\\Users\\Philippe\\Documents\\PP\\MiniProjet\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
           "C:\\Users\\Philippe\\AppData\\Roaming\\NuGet\\NuGet.Config"

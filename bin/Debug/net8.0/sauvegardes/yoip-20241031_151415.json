@@ -1,0 +1,141 @@
+{
+  "Nom": "yoip",
+  "Experience": 0,
+  "Niveau": 23,
+  "Classe": {
+    "Nom": "Revenant",
+    "Niveau": 10,
+    "PointsDeVie": 205,
+    "Force": 55,
+    "Agilite": 10.000000000000004,
+    "Intelligence": 25,
+    "Defense": 39,
+    "DefenseMagique": 33,
+    "Vitesse": 58.999999999999986
+  },
+  "Arme": {
+    "Nom": "Marteau de chasse",
+    "DegatsPhysiques": 12,
+    "DegatsMagiques": 0,
+    "ClasseDefaut": "Revenant",
+    "Multiplicateur": 1.3,
+    "Defense": 5,
+    "DefenseMagique": 0,
+    "Agilite": 5,
+    "Vitesse": -5,
+    "AttaqueSpe": {
+      "Nom": "Sacrifice Mortel",
+      "Type": "multiplierVie\u0026buff",
+      "NombreDeTour": 0,
+      "Utilisation": 1,
+      "UtilisationMax": 1,
+      "Description": "R\u00E9duit sa vie de 60% mais gagne 60% de d\u00E9fense physique.",
+      "DgtPhysiques": 0,
+      "DgtMagiques": 0,
+      "DotDegatsParTour": 0,
+      "BuffStatistiques": "defense",
+      "MontantBuff": 150,
+      "NerfStatistiques": "",
+      "MontantNerf": 0,
+      "Soins": 0,
+      "Multiplier": 0.4,
+      "ChanceCrit": 10
+    }
+  },
+  "Armurerie": {
+    "1": {
+      "Nom": "Arc en bois",
+      "DegatsPhysiques": 14,
+      "DegatsMagiques": 0,
+      "ClasseDefaut": "Archer",
+      "Multiplicateur": 1.3,
+      "Defense": 0,
+      "DefenseMagique": 0,
+      "Agilite": 1,
+      "Vitesse": 0,
+      "AttaqueSpe": {
+        "Nom": "Fl\u00E8che Empoisonn\u00E9e",
+        "Type": "physique\u0026dot",
+        "NombreDeTour": 3,
+        "Utilisation": 3,
+        "UtilisationMax": 3,
+        "Description": "Lance une fl\u00E8che empoisonn\u00E9e qui inflige des d\u00E9g\u00E2ts magiques initiaux et des d\u00E9g\u00E2ts de poison pendant 3 tours.",
+        "DgtPhysiques": 15,
+        "DgtMagiques": 0,
+        "DotDegatsParTour": 50,
+        "BuffStatistiques": "",
+        "MontantBuff": 0,
+        "NerfStatistiques": "",
+        "MontantNerf": 0,
+        "Soins": 0,
+        "Multiplier": 0,
+        "ChanceCrit": 10
+      }
+    },
+    "2": {
+      "Nom": "Marteau de chasse",
+      "DegatsPhysiques": 12,
+      "DegatsMagiques": 0,
+      "ClasseDefaut": "Revenant",
+      "Multiplicateur": 1.3,
+      "Defense": 5,
+      "DefenseMagique": 0,
+      "Agilite": 5,
+      "Vitesse": -5,
+      "AttaqueSpe": {
+        "Nom": "Sacrifice Mortel",
+        "Type": "multiplierVie\u0026buff",
+        "NombreDeTour": 0,
+        "Utilisation": 1,
+        "UtilisationMax": 1,
+        "Description": "R\u00E9duit sa vie de 60% mais gagne 60% de d\u00E9fense physique.",
+        "DgtPhysiques": 0,
+        "DgtMagiques": 0,
+        "DotDegatsParTour": 0,
+        "BuffStatistiques": "defense",
+        "MontantBuff": 150,
+        "NerfStatistiques": "",
+        "MontantNerf": 0,
+        "Soins": 0,
+        "Multiplier": 0.4,
+        "ChanceCrit": 10
+      }
+    }
+  },
+  "ClassesDebloquee": {
+    "1": {
+      "Nom": "Archer",
+      "Niveau": 10,
+      "PointsDeVie": 170,
+      "Force": 61,
+      "Agilite": 19,
+      "Intelligence": 25,
+      "Defense": 32,
+      "DefenseMagique": 26,
+      "Vitesse": 61.000000000000014
+    },
+    "2": {
+      "Nom": "Revenant",
+      "Niveau": 10,
+      "PointsDeVie": 205,
+      "Force": 55,
+      "Agilite": 10.000000000000004,
+      "Intelligence": 25,
+      "Defense": 39,
+      "DefenseMagique": 33,
+      "Vitesse": 58.999999999999986
+    }
+  },
+  "PointsDeVieActuels": 205,
+  "ForceActuelle": 55,
+  "AgiliteActuelle": 10.000000000000004,
+  "IntelligenceActuelle": 25,
+  "DefenseActuelle": 39,
+  "DefenseMagiqueActuelle": 33,
+  "VitesseActuelle": 9175020,
+  "PieceDor": 1168,
+  "InventaireSerializable": {
+    "Potion de Soin": 2,
+    "Potion de D\u00E9g\u00E2ts": 3
+  }
+}
